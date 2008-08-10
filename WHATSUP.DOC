@@ -1,1 +1,19 @@
-You will need to copy config.yml.example to config.yml and then put in actual twitter accounts. You will also need to install some gems - according to what is "require"d at the top of the scripts.
+You will need to copy patatat.conf.example to patatat.conf and then put in 
+actual twitter account details. 
+
+You will also need to install some gems - according to what is "require"d at the 
+top of the scripts.
+ 
+To setup fsdb:
+
+wget http://redshift.sourceforge.net/fsdb/fsdb-0.5.tgz
+tar -xvzf fsdb-0.5.tgz
+cd fsdb-0.5
+ruby install.rb config
+ruby install.rb setup
+sudo ruby install.rb install
+cd ..
+rm -rf fsdb-0.5*
+
+To run the specs you will need rspec. Then within the root patatat folder you
+can run "spec spec" or "autotest"

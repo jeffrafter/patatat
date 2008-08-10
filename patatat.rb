@@ -1,11 +1,11 @@
 #!/usr/bin/ruby
 
 require 'rubygems'
-require 'fsdb'
 require 'time'
 require 'cgi'
 require 'yaml'
-require File.expand_path(File.dirname(__FILE__)) + '/tweeter.rb'
+require 'fsdb'
+require File.expand_path(File.dirname(__FILE__)) + '/tweeter'
 
 # Monkeypatch some append action since I couldn't get normal array appends to work with fsdb arrays
 class FSDB::Database
