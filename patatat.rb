@@ -5,7 +5,7 @@ require 'time'
 require 'cgi'
 require 'yaml'
 require 'fsdb'
-require File.expand_path(File.dirname(__FILE__)) + '/tweeter'
+require File.expand_path(File.dirname(__FILE__)) + '/lib/tweeter'
 
 # Monkeypatch some append action since I couldn't get normal array appends to work with fsdb arrays
 class FSDB::Database
@@ -33,7 +33,7 @@ class Patatat < Tweeter
 
   def send_rss_updates(screen_name)
     Tweeter.yell "Checking for rss updates for #{screen_name}:"
-    yoke_command = "./theyoke.pl --columns=150 --username=#{screen_name} --configdir=#{$config["data_directory"]}/.theyoke" # This is dangerous! - imagine nefarious screen names
+    yoke_command = "./bin/theyoke.pl --columns=150 --username=#{screen_name} --configdir=#{$config["data_directory"]}/.theyoke" # This is dangerous! - imagine nefarious screen names
     Tweeter.yell yoke_command
     rss_update = `#{yoke_command}`
     Tweeter.yell rss_update
