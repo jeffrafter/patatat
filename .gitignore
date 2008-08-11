@@ -1,3 +1,4 @@
 *.swp
 .DS_Store
 patatat.conf
+deploy.rb
