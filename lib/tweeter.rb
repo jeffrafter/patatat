@@ -52,7 +52,7 @@ class Tweeter
     Tweeter.yell "Following #{screen_name}"
     @friends << screen_name
     path = "/friendships/create/#{screen_name}.json"
-    authenticated_get(path)
+    authenticated_post(path)
   end
 
   def unfollowed_friends_screenames
@@ -65,7 +65,7 @@ class Tweeter
 
   def authenticated_get(path)
     Net::HTTP.start("twitter.com", 80) do |http|
-      Tweeter.yell "GETting: #{path} for #{@username}"
+      Tweeter.yell "Getting: #{path} for #{@username}"
       request = Net::HTTP::Get.new(path)
       request.basic_auth(@username, @password)
       response = http.request(request)
@@ -73,7 +73,19 @@ class Tweeter
       Tweeter.yell "Response: #{response}" rescue Tweeter.yell "Exception trying to GET #{path}: #{$!}\n#{response}"
       response
     end
-
   end
+  
+  def authenticated_post(path)
+    Net::HTTP.start("twitter.com", 80) do |http|
+      Tweeter.yell "Posting: #{path} for #{@username}"
+      request = Net::HTTP::Post.new(path)
+      request.basic_auth(@username, @password)
+      response = http.request(request)
+      response = JSON.parse(response.body)
+      Tweeter.yell "Response: #{response}" rescue Tweeter.yell "Exception trying to GET #{path}: #{$!}\n#{response}"
+      response
+    end
+  end
+  
 
 end
