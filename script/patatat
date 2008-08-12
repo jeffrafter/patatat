@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+require File.expand_path(File.dirname(__FILE__)) + '/../lib/patatat'
+
+PATATAT_ROOT = File.expand_path(File.dirname(__FILE__)) + "/.."
+
+# Only execute this code if it was launched from the command line
+if __FILE__ == $0
+  pid = fork do
+    Signal.trap('HUP', 'IGNORE') # Don't die upon logout - this doesn't seem to work I use monit instead
+    puts "Starting Daemon"
+
+    $config = YAML.load(File.open(PATATAT_ROOT + "/config/patatat.conf"))
+    $shortcuts = YAML.load(File.open(PATATAT_ROOT + "/config/shortcuts.conf"))
+    Dir.chdir PATATAT_ROOT
+    `mkdir -p #{PATATAT_ROOT}/pids`
+    `mkdir -p #{PATATAT_ROOT}/log`
+    `mkdir -p #{PATATAT_ROOT}/yoke`
+
+    patatat = Patatat.new($config["twitter"]["username"], $config["twitter"]["password"])
+
+    while(true)
+      patatat.process
+      allowed_requests_per_hour = 20
+      requests_per_process = 2
+      sleep_time = requests_per_process * 60 * 60 / allowed_requests_per_hour #twitter varies the request limit
+      Tweeter.yell "Sleeping for #{sleep_time}"
+      sleep sleep_time
+    end
+  end
+  `echo #{pid} > #{PATATAT_ROOT}/pids/patatat.pid`
+  Process.detach(pid)
+end

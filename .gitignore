@@ -2,3 +2,7 @@
 .DS_Store
 patatat.conf
 deploy.rb
+log
+yoke
+database
+pids

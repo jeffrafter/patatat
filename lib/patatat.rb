@@ -1,11 +1,8 @@
-#!/usr/bin/ruby
-
 require 'rubygems'
 require 'time'
 require 'cgi'
 require 'yaml'
-require 'fsdb'
-require File.expand_path(File.dirname(__FILE__)) + '/lib/tweeter'
+require File.expand_path(File.dirname(__FILE__)) + '/../lib/tweeter'
 
 # Monkeypatch some append action since I couldn't get normal array appends to work with fsdb arrays
 class FSDB::Database
@@ -22,9 +19,9 @@ class Patatat < Tweeter
 
   def initialize(username,password)
     super(username, password)
-    @database = FSDB::Database.new($config["data_directory"]+"/database/")
+    @database = FSDB::Database.new("#{PATATAT_ROOT}/database/")
     @last_processed_at = @database['last_processed_at']
-    Dir.mkdir("#{$config["data_directory"]}/.theyoke") unless File.directory?("#{$config["data_directory"]}/.theyoke")
+    Dir.mkdir("#{PATATAT_ROOT}/yoke/.theyoke") unless File.directory?("#{PATATAT_ROOT}/yoke/.theyoke")
   end
 
   def reset
@@ -33,7 +30,7 @@ class Patatat < Tweeter
 
   def send_rss_updates(screen_name)
     Tweeter.yell "Checking for rss updates for #{screen_name}:"
-    yoke_command = "./bin/theyoke.pl --columns=150 --username=#{screen_name} --configdir=#{$config["data_directory"]}/.theyoke" # This is dangerous! - imagine nefarious screen names
+    yoke_command = "./bin/theyoke.pl --columns=150 --username=#{screen_name} --configdir=#{PATATAT_ROOT}/yoke/.theyoke" # This is dangerous! - imagine nefarious screen names
     Tweeter.yell yoke_command
     rss_update = `#{yoke_command}`
     Tweeter.yell rss_update
@@ -44,7 +41,7 @@ class Patatat < Tweeter
       headline.gsub!(/ : /,": ")
       headline.gsub!(/ - /,"-")
       headline.gsub!(/ \/ /,"/")
-      $config["shortcuts"].each{|site,settings|
+      $shortcuts["shortcuts"].each{|site,settings|
         headline.gsub!(/#{settings["regex"]}/,settings["replacement"])
       }
       # Camel case no spaces FTW? CamelCaseNoSpacesFTW?:
@@ -95,7 +92,7 @@ class Patatat < Tweeter
       when /show feeds/i
         send_direct_message(screen_name, feed_list_compact(screen_name).join(" |"))
       else
-        $config["shortcuts"].each{|shortcut, settings|
+        $shortcuts["shortcuts"].each{|shortcut, settings|
           next unless settings["url"]
           subscribe_shortcut(screen_name, $1, setting["url"]) if message.match(/#{shortcut} (.+)/)
         }
@@ -105,7 +102,7 @@ class Patatat < Tweeter
 
   def send_help_message(screen_name)
     help_string = ""
-    $config["shortcuts"].each{|shortcut, settings|
+    $shortcuts["shortcuts"].each{|shortcut, settings|
       next unless settings["url"]
       help_string += "Add #{shortcut} feed: d #{@username} #{shortcut} topic. "
     }
@@ -151,7 +148,7 @@ class Patatat < Tweeter
     # Try and give a short representation otherwise use the feed
     feed_list(screen_name).collect{|feed|
       puts "#{feed}"
-      $config["shortcuts"].collect{|shortcut, settings|
+      $shortcuts["shortcuts"].collect{|shortcut, settings|
         next unless settings["url"]
         puts settings["url"]
         regex = settings["url"].gsub(/SEARCH_TERM/, "(.*)")
@@ -165,43 +162,13 @@ class Patatat < Tweeter
     @database.append("#{recipient}/messages_sent", message)
   end
 
-  def messages_sent(twittername)
-     @database["#{twittername}/messages_sent"]
+  def messages_sent(screen_name)
+     @database["#{screen_name}/messages_sent"]
   end
 
-  def new_follower(twittername)
-    follow(twittername)
-    send_direct_message(twittername, "Welcome to patatat, send 'd patatat help' for more information")
+  def new_follower(screen_name)
+    follow(screen_name)
+    send_direct_message(screen_name, "Welcome to #{@username}, send 'd #{@username} help' for more information")
   end
 
-end
-
-
-#Only execute this code if it was launched from the command line
-if __FILE__ == $0
-  pid = fork do
-    Signal.trap('HUP', 'IGNORE') # Don't die upon logout - this doesn't seem to work I use monit instead
-    puts "Starting Daemon"
-
-
-
-
-    path_to_patatat = File.expand_path(File.dirname(__FILE__))
-    $config = YAML.load(File.open(path_to_patatat + "/patatat.conf"))
-    Dir.chdir path_to_patatat
-
-    patatat = Patatat.new($config["twitter_account_details"]["username"], $config["twitter_account_details"]["password"])
-#  patatat.reset if reset
-
-    while(true)
-      patatat.process
-      allowed_requests_per_hour = 20
-      requests_per_process = 2
-      sleep_time = requests_per_process * 60 * 60/allowed_requests_per_hour #twitter varies the request limit
-      Tweeter.yell "Sleeping for #{sleep_time}"
-      sleep sleep_time
-    end
-  end
-  `echo #{pid} > #{$config["data_directory"]}/patatat.pid`
-  Process.detach(pid)
 end
