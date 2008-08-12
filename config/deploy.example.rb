@@ -28,23 +28,16 @@ twitter:
 EOF
 				sudo "mkdir -p #{shared_path}"
         sudo "chown deploy:deploy #{shared_path}"
-				run "mkdir -p #{shared_path}/config"
-				run "mkdir -p #{shared_path}/yoke"
-				run "mkdir -p #{shared_path}/database"
-				run "mkdir -p #{shared_path}/log"
-				run "mkdir -p #{shared_path}/pids"
+        run <<-CMD
+				  mkdir -p #{shared_path}/config &&
+				  mkdir -p #{shared_path}/yoke &&
+				  mkdir -p #{shared_path}/database &&
+				  mkdir -p #{shared_path}/log &&
+				  mkdir -p #{shared_path}/pids
+        CMD  
 				put patatat_configuration, "#{shared_path}/config/patatat.conf"
 		  end		
     end
-
-    desc "Symlink shared configuration and data files to current"
-    task :localize, :roles => [:app] do
-      run "ln -nsf #{shared_path}/config/patatat.conf #{current_path}/config/patatat.conf"
-      run "ln -nsf #{shared_path}/yoke #{current_path}/yoke"
-      run "ln -nsf #{shared_path}/database #{current_path}/database"
-      run "ln -nsf #{shared_path}/log #{current_path}/log"
-      run "ln -nsf #{shared_path}/pids #{current_path}/pids"
-    end 		
   end
 end
 
@@ -64,17 +57,36 @@ namespace :deploy do
   task :restart do
     puts "Not currently implemented"
   end  
+
+  desc "Finalize the update"
+  task :finalize_update, :except => { :no_release => true } do
+    run "chmod -R g+w #{latest_release}" if fetch(:group_writable, true)
+    run <<-CMD
+      rm -rf #{latest_release}/log #{latest_release}/tmp/pids &&
+      mkdir -p #{latest_release}/tmp &&
+      ln -s #{shared_path}/log #{latest_release}/log &&
+      ln -s #{shared_path}/pids #{latest_release}/tmp/pids
+    CMD
+  end  
+
 end
 
 # == TASKS =====================================================================
 after "deploy", "deploy:cleanup"
 after "deploy:setup", "init:config:patatat"
-after "deploy:symlink", "init:config:localize"
 
 task :after_update_code do
+  run <<-CMD
+    ln -nsf #{shared_path}/config/patatat.conf #{release_path}/config/patatat.conf &&
+    ln -nsf #{shared_path}/yoke #{release_path}/yoke &&
+    ln -nsf #{shared_path}/database #{release_path}/database &&
+    ln -nsf #{shared_path}/log #{release_path}/log && 
+    ln -nsf #{shared_path}/pids #{release_path}/pids 
+  CMD  
+
   sudo "chown patatat:patatat #{release_path}/config -R"
-  sudo "chown patatat:patatat #{current_path}/yoke -R"
-  sudo "chown patatat:patatat #{current_path}/database -R"
-  sudo "chown patatat:patatat #{current_path}/log -R"
-  sudo "chown patatat:patatat #{current_path}/pids -R"
+  sudo "chown patatat:patatat #{release_path}/yoke -R"
+  sudo "chown patatat:patatat #{release_path}/database -R"
+  sudo "chown patatat:patatat #{release_path}/log -R"
+  sudo "chown patatat:patatat #{release_path}/tmp/pids -R"
 end

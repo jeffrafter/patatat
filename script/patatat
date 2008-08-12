@@ -12,7 +12,8 @@ if __FILE__ == $0
     $config = YAML.load(File.open(PATATAT_ROOT + "/config/patatat.conf"))
     $shortcuts = YAML.load(File.open(PATATAT_ROOT + "/config/shortcuts.conf"))
     Dir.chdir PATATAT_ROOT
-    `mkdir -p #{PATATAT_ROOT}/pids`
+    `mkdir -p #{PATATAT_ROOT}/tmp`
+    `mkdir -p #{PATATAT_ROOT}/tmp/pids`
     `mkdir -p #{PATATAT_ROOT}/log`
     `mkdir -p #{PATATAT_ROOT}/yoke`
 
@@ -27,6 +28,6 @@ if __FILE__ == $0
       sleep sleep_time
     end
   end
-  `echo #{pid} > #{PATATAT_ROOT}/pids/patatat.pid`
+  `echo #{pid} > #{PATATAT_ROOT}/tmp/pids/patatat.pid`
   Process.detach(pid)
 end

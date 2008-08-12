@@ -17,3 +17,9 @@ rm -rf fsdb-0.5*
 
 To run the specs you will need rspec. Then within the root patatat folder you
 can run "spec spec" or "autotest"
+
+
+sudo adduser --system --group --disabled-login patatat
+sudo gem install json
+sudo mkdir /var/www/patatat
+sudo chown deploy:deploy /var/www/patatat
