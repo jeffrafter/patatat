@@ -10,7 +10,7 @@ class Tweeter
   def initialize(username, password)
     @username = username  
     @password = password
-    Tweeter.yell "Patatat initialized"
+    Tweeter.yell "\nPatatat initialized"
   end
 
   def self.yell(msg) 
@@ -69,8 +69,8 @@ class Tweeter
       request = Net::HTTP::Get.new(path)
       request.basic_auth(@username, @password)
       response = http.request(request)
-      response = JSON.parse(response.body)
-      Tweeter.yell "Response: #{response}" rescue Tweeter.yell "Exception trying to GET #{path}: #{$!}\n#{response}"
+      json = JSON.parse(response.body)
+      Tweeter.yell "Response: #{response.body}\n" rescue Tweeter.yell "Exception trying to GET #{path}: #{$!}\n#{json}"
       response
     end
   end
@@ -81,8 +81,8 @@ class Tweeter
       request = Net::HTTP::Post.new(path)
       request.basic_auth(@username, @password)
       response = http.request(request)
-      response = JSON.parse(response.body)
-      Tweeter.yell "Response: #{response}" rescue Tweeter.yell "Exception trying to GET #{path}: #{$!}\n#{response}"
+      json = JSON.parse(response.body)
+      Tweeter.yell "Response: #{response.body}\n" rescue Tweeter.yell "Exception trying to GET #{path}: #{$!}\n#{json}"
       response
     end
   end
